@@ -36,6 +36,7 @@ def run(filename):
     screen = new_screen()
     zbuffer = new_zbuffer()
     polygons = []
+    edges = []
     tmp = []
     step_3d = 100
     consts = ''
@@ -47,9 +48,7 @@ def run(filename):
                           'blue': [0.2, 0.5, 0.5]}]
     reflect = '.white'
     
-    print symbols
     for command in commands:
-	print command
         if command['op'] == 'push':
             stack.append( [x[:] for x in stack[-1]])
         elif command['op'] == 'pop':
@@ -64,6 +63,7 @@ def run(filename):
            knob = command['knob'] if command['knob'] else 1
 	   command['args'] = [command['args'][n] * knob for n in range(3)]
            t = make_scale(float(command['args'][0]), float(command['args'][1]), float(command['args'][2]))
+	   matrix_mult( stack[-1], t)
            stack[-1] = [ x[:] for x in t]
         elif command['op'] == 'rotate':
            knob = command['knob'] if command['knob'] else 1
@@ -90,15 +90,18 @@ def run(filename):
            polygons = []
 	elif command['op'] == 'torus':
 	   add_torus(polygons, float(command['args'][0]), float(command['args'][1]), float(command['args'][2]), float(command['args'][3]), float(command['args'][4]), step_3d)
-	   print polygons[0]
-	   print_matrix(stack[-1])
 	   matrix_mult( stack[-1], polygons )
-	   print polygons[0]
            const = command['constants'] if command['constants'] else reflect
            draw_polygons(polygons, screen, zbuffer, view, ambient, light, symbols, const)
            polygons = []
+	elif command['op'] == 'line':
+	   add_edge( edges, float(command['args'][0]), float(command['args'][1]), float(command['args'][2]), float(command['args'][3]), float(command['args'][4]), float(command['args'][5]) )
+           matrix_mult( systems[-1], edges )
+	   const = command['constants'] if command['constants'] else reflect
+           draw_lines(edges, screen, zbuffer, const)
+           edges = []
 	elif command['op'] == 'display':
 	   display(screen)
 	elif command['op'] == 'save':
-	   save_extension(screen, command['args'][0])
+	   save_extension(screen, command['args'][0] + '.png')
 	   
